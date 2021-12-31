@@ -1,4 +1,5 @@
-use std::{collections::HashMap, convert::TryFrom};
+use std::collections::HashMap;
+use num_traits::FromPrimitive;
 
 use byteorder::{BigEndian, ReadBytesExt};
 use serde::Deserialize;
@@ -154,12 +155,12 @@ impl<'a> Chunk<'a> {
             let i = 4 * ((z / 4) * 4 + (x / 4));
             let biome = (&biomes[i..]).read_i32::<BigEndian>().ok()?;
 
-            Biome::try_from(biome).ok()
+            Biome::from_i32(biome)
         } else if biomes.len() == 256 * 4 {
             // Minecraft 1.15 (and past?)
             let i = 4 * (z * 16 + x);
             let biome = (&biomes[i..]).read_i32::<BigEndian>().ok()?;
-            Biome::try_from(biome).ok()
+            Biome::from_i32(biome)
         } else {
             None
         }

@@ -1,9 +1,9 @@
 //! functionality relating to Minecraft biomes.
 
-use num_enum::{IntoPrimitive, TryFromPrimitive};
+use num_derive::{ToPrimitive, FromPrimitive};
 
 // Values from https://minecraft.gamepedia.com/Java_Edition_data_value#Biomes
-#[derive(TryFromPrimitive, IntoPrimitive, Debug)]
+#[derive(FromPrimitive, ToPrimitive, Debug)]
 #[repr(i32)] // i32 as in corresponding NBT.
 pub enum Biome {
     Ocean = 0,

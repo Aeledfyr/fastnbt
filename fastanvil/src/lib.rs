@@ -4,8 +4,8 @@
 
 use byteorder::{BigEndian, ReadBytesExt};
 use flate2::read::ZlibDecoder;
-use num_enum::TryFromPrimitive;
-use std::convert::TryFrom;
+use num_derive::FromPrimitive;
+use num_traits::FromPrimitive;
 use std::io::{Read, Seek, SeekFrom};
 
 /// the size in bytes of a 'sector' in a region file. Sectors are Minecraft's size unit
@@ -27,7 +27,7 @@ pub use render::*;
 pub use types::*;
 
 /// Various compression schemes that NBT data is typically compressed with.
-#[derive(Debug, TryFromPrimitive)]
+#[derive(Debug, FromPrimitive)]
 #[repr(u8)]
 pub enum CompressionScheme {
     Gzip = 1,
@@ -65,7 +65,7 @@ impl ChunkMeta {
         let mut buf = (&data[..5]).clone();
         let len = buf.read_u32::<BigEndian>()?;
         let scheme = buf.read_u8()?;
-        let scheme = CompressionScheme::try_from(scheme).map_err(|_| Error::InvalidChunkMeta)?;
+        let scheme = CompressionScheme::from_u8(scheme).ok_or(Error::InvalidChunkMeta)?;
 
         Ok(Self {
             compressed_len: len - 1, // this len include the compression byte.
