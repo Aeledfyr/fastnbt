@@ -1,8 +1,9 @@
 use std::collections::HashMap;
+use std::borrow::Cow;
 
 use serde::{Deserialize, Serialize};
 
-use crate::{ByteArray, IntArray, LongArray};
+use crate::{borrow, ByteArray, IntArray, LongArray};
 
 /// Value is a complete NBT value. It owns its data. Compounds and Lists are
 /// resursively deserialized. This type takes care to preserve all the
@@ -43,6 +44,32 @@ pub enum Value {
     LongArray(LongArray),
     List(Vec<Value>),
     Compound(HashMap<String, Value>),
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+#[serde(untagged)]
+pub enum BorrowedValue<'a> {
+    #[serde(deserialize_with = "strict_i8")]
+    Byte(i8),
+    #[serde(deserialize_with = "strict_i16")]
+    Short(i16),
+    #[serde(deserialize_with = "strict_i32")]
+    Int(i32),
+    Long(i64),
+    Double(f64),
+    Float(f32),
+    #[serde(borrow)]
+    String(Cow<'a, str>),
+    #[serde(borrow)]
+    ByteArray(borrow::ByteArray<'a>),
+    #[serde(borrow)]
+    IntArray(borrow::IntArray<'a>),
+    #[serde(borrow)]
+    LongArray(borrow::LongArray<'a>),
+    #[serde(borrow)]
+    List(Vec<BorrowedValue<'a>>),
+    #[serde(borrow)]
+    Compound(HashMap<String, BorrowedValue<'a>>),
 }
 
 fn strict_i8<'de, D>(de: D) -> std::result::Result<i8, D::Error>
