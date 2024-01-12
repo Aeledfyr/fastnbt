@@ -279,7 +279,7 @@ where
     // `from_bytes`. This would be invalid starting data for NBT anyway.
     if input.starts_with(&GZIP_MAGIC_BYTES) {
         return Err(Error::bespoke(
-            "from_bytes expects raw NBT, but input appears to be gzipped".to_string(),
+            "from_bytes expects raw NBT, but input appears to be gzipped",
         ));
     }
 
@@ -604,11 +604,11 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
     {
         let tag = match self.layers.last() {
             Some(Layer::Compound { current_tag, .. }) => current_tag.as_ref().ok_or_else(|| {
-                Error::bespoke("deserialize bool: did not know value's tag".to_string())
+                Error::bespoke("deserialize bool: did not know value's tag")
             }),
             Some(Layer::List { element_tag, .. }) => Ok(element_tag),
             None => Err(Error::bespoke(
-                "deserialize bool: not in compound or list".to_string(),
+                "deserialize bool: not in compound or list",
             )),
         }?;
 
@@ -618,7 +618,7 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
             Tag::Int => visitor.visit_bool(self.input.0.read_i32::<BigEndian>()? != 0),
             Tag::Long => visitor.visit_bool(self.input.0.read_i64::<BigEndian>()? != 0),
             _ => Err(Error::bespoke(
-                "deserialize bool: expected integral value".to_string(),
+                "deserialize bool: expected integral value",
             )),
         }
     }
@@ -637,7 +637,7 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
         V: de::Visitor<'de>,
     {
         let layer = self.layers.last().ok_or_else(|| {
-            Error::bespoke("expected bytes, but not in a compound or list".to_owned())
+            Error::bespoke("expected bytes, but not in a compound or list")
         })?;
 
         match layer {
@@ -645,14 +645,11 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
                 remaining_elements,
                 element_tag,
                 ..
-            } => Err(Error::bespoke(format!(
-                "expected bytes, got [{:?}; {}]",
-                element_tag, remaining_elements
-            ))),
+            } => Err(Error::UnexpectedList { expected: "bytes", elem_tag: *element_tag, size: *remaining_elements }),
             Layer::Compound {
                 current_tag: None, ..
             } => Err(Error::bespoke(
-                "expected bytes, but do not know what to deserialize".to_owned(),
+                "expected bytes, but do not know what to deserialize",
             )),
             Layer::Compound {
                 current_tag: Some(Tag::List),
@@ -678,10 +675,7 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
                         let bs = self.input.consume_bytes_unchecked(size * 8)?;
                         visitor.visit_borrowed_bytes(bs)
                     }
-                    _ => Err(Error::bespoke(format!(
-                        "expected bytes, got [{:?}; {}]",
-                        el, size
-                    ))),
+                    _ => Err(Error::UnexpectedList { expected: "bytes", elem_tag: el, size: size }),
                 }
             }
             Layer::Compound {
@@ -704,7 +698,7 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
                     let bs = self.input.consume_bytes_unchecked(size * 8i32)?;
                     visitor.visit_borrowed_bytes(bs)
                 }
-                _ => Err(Error::bespoke(format!("expected bytes, found {:?}", tag))),
+                _ => Err(Error::UnexpectedTag { expected: "bytes", tag: *tag }),
             },
         }
     }
@@ -733,11 +727,11 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
     {
         let tag = match self.layers.last() {
             Some(Layer::Compound { current_tag, .. }) => current_tag.as_ref().ok_or_else(|| {
-                Error::bespoke("deserialize unit: did not know value's tag".to_string())
+                Error::bespoke("deserialize unit: did not know value's tag")
             }),
             Some(Layer::List { element_tag, .. }) => Ok(element_tag),
             None => Err(Error::bespoke(
-                "deserialize_unit: not in compound or list".to_string(),
+                "deserialize_unit: not in compound or list",
             )),
         }?;
 
@@ -797,7 +791,7 @@ impl<'de, 'a> de::Deserializer<'de> for &'a mut Deserializer<'de> {
         // We have already read the tag and name. This is the payload.
 
         let layer = self.layers.last().ok_or_else(|| {
-            Error::bespoke("expected unwanted payload, but not in a compound or list".to_owned())
+            Error::bespoke("expected unwanted payload, but not in a compound or list")
         })?;
 
         match layer {
@@ -907,7 +901,7 @@ impl<'a, 'de> de::SeqAccess<'de> for ListAccess<'a, 'de> {
             .de
             .layers
             .last_mut()
-            .ok_or_else(|| Error::bespoke("expected to be in list".to_owned()))?;
+            .ok_or_else(|| Error::bespoke("expected to be in list"))?;
 
         match layer {
             Layer::List {
@@ -926,10 +920,7 @@ impl<'a, 'de> de::SeqAccess<'de> for ListAccess<'a, 'de> {
             Layer::Compound {
                 current_tag,
                 stage: _,
-            } => Err(Error::bespoke(format!(
-                "expected to be in list, but was in compound {:?}",
-                current_tag
-            ))),
+            } => Err(Error::ExpectedListFoundCompount(*current_tag)),
         }
     }
 }

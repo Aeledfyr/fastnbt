@@ -224,7 +224,7 @@ impl<'a, 'de> serde::Deserializer<'de> for ArrayDeserializer<'a, 'de> {
         let len: usize = self
             .size
             .try_into()
-            .map_err(|e: TryFromIntError| Error::bespoke(e.to_string()))?;
+            .map_err(|e: TryFromIntError| Error::BadArrayLength(self.size))?;
 
         let total_bytes = len * element_size(self.tag);
 
